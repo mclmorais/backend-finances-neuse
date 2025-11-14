@@ -24,6 +24,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.1",
+    "@scalar/nestjs-api-reference": "^1.0.7",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.7",
     "nestjs-zod": "^5.0.1",

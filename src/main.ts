@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { apiReference } from '@scalar/nestjs-api-reference';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 import { AppModule } from './app.module';
 
@@ -15,7 +16,12 @@ async function bootstrap() {
       .build(),
   );
 
-  SwaggerModule.setup('api', app, cleanupOpenApiDoc(openApiDoc));
+  app.use(
+    '/api',
+    apiReference({
+      content: cleanupOpenApiDoc(openApiDoc),
+    }),
+  );
 
   await app.listen(process.env.PORT ?? 3000);
 }
