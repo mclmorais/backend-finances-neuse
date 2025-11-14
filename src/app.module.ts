@@ -3,10 +3,12 @@ import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CategoriesModule } from './categories/categories.module';
+import { DbModule } from './db/db.module';
 import { HttpExceptionFilter } from './http-exception.filter';
 
 @Module({
-  imports: [],
+  imports: [DbModule, CategoriesModule],
   controllers: [AppController],
   providers: [
     AppService,
