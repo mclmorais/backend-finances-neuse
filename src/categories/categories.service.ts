@@ -7,10 +7,16 @@ import { CreateCategoryBodyInputDto } from './dto/create-category.input-dto';
 export class CategoriesService {
   constructor(private readonly dbService: DbService) {}
 
-  async create(createCategoryDto: CreateCategoryBodyInputDto) {
+  async create(
+    userId: string,
+    createCategoryDto: CreateCategoryBodyInputDto,
+  ) {
     const [category] = await this.dbService.db
       .insert(categories)
-      .values(createCategoryDto)
+      .values({
+        ...createCategoryDto,
+        userId,
+      })
       .returning();
 
     return category;

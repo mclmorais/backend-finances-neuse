@@ -16,6 +16,15 @@ async function bootstrap() {
       .setTitle('Backend Finances Neuse API')
       .setDescription('API documentation for Backend Finances Neuse')
       .setVersion('1.0')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Enter your Supabase JWT token',
+        },
+        'bearer',
+      )
       .build(),
   );
 
@@ -23,6 +32,16 @@ async function bootstrap() {
     '/api',
     apiReference({
       content: cleanupOpenApiDoc(openApiDoc),
+      authentication: {
+        preferredSecurityScheme: 'bearer',
+        securitySchemes: {
+          bearer: {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+          },
+        },
+      },
     }),
   );
 
