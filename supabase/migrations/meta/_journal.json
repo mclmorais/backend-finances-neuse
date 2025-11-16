@@ -15,6 +15,13 @@
       "when": 1763083710653,
       "tag": "0001_aberrant_aaron_stack",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1763302799632,
+      "tag": "0002_pink_zarda",
+      "breakpoints": true
     }
   ]
 }

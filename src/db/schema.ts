@@ -11,3 +11,14 @@ export const categories = pgTable('categories', {
 
 export type InsertCategory = typeof categories.$inferInsert;
 export type SelectCategory = typeof categories.$inferSelect;
+
+export const accounts = pgTable('accounts', {
+  id: serial('id').primaryKey().notNull(),
+  userId: uuid('user_id').notNull(),
+  color: text('color').notNull(),
+  icon: text('icon').notNull(),
+  name: text('name').notNull(),
+})
+
+export type InsertAccount = typeof accounts.$inferInsert;
+export type SelectAccount = typeof accounts.$inferSelect;
