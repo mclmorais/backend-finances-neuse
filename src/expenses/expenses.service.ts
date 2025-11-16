@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, gte, lte } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
 import { expenses } from '../db/schema';
 import { CreateExpenseBodyInputDto } from './dto/create-expense.input-dto';
@@ -28,6 +28,23 @@ export class ExpensesService {
       .where(eq(expenses.userId, userId));
   }
 
+  async findByMonth(userId: string, year: number, month: number) {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+    return this.dbService.db
+      .select()
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.userId, userId),
+          gte(expenses.date, startDate),
+          lte(expenses.date, endDate),
+        ),
+      );
+  }
+
   async update(
     userId: string,
     expenseId: number,
@@ -36,9 +53,7 @@ export class ExpensesService {
     const [expense] = await this.dbService.db
       .update(expenses)
       .set(updateExpenseDto)
-      .where(
-        and(eq(expenses.id, expenseId), eq(expenses.userId, userId)),
-      )
+      .where(and(eq(expenses.id, expenseId), eq(expenses.userId, userId)))
       .returning();
 
     if (!expense) {
@@ -53,9 +68,7 @@ export class ExpensesService {
   async delete(userId: string, expenseId: number) {
     const [expense] = await this.dbService.db
       .delete(expenses)
-      .where(
-        and(eq(expenses.id, expenseId), eq(expenses.userId, userId)),
-      )
+      .where(and(eq(expenses.id, expenseId), eq(expenses.userId, userId)))
       .returning();
 
     if (!expense) {

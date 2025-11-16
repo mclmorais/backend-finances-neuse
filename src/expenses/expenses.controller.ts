@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
@@ -18,6 +19,7 @@ import { ExpensesService } from './expenses.service';
 import { CreateExpenseBodyInputDto } from './dto/create-expense.input-dto';
 import { CreateExpenseOutputDto } from './dto/create-expense.output-dto';
 import { DeleteExpenseParamsInputDto } from './dto/delete-expense.input-dto';
+import { ListExpensesByMonthQueryInputDto } from './dto/list-expenses-by-month.input-dto';
 import { ListExpensesOutputDto } from './dto/list-expenses.output-dto';
 import {
   UpdateExpenseBodyInputDto,
@@ -47,6 +49,21 @@ export class ExpensesController {
   @ZodResponse({ type: ListExpensesOutputDto })
   async findAll(@User() user: { userId: string }) {
     return this.expensesService.findAll(user.userId);
+  }
+
+  @Get('by-month')
+  @UseGuards(SupabaseAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ZodResponse({ type: ListExpensesOutputDto })
+  async findByMonth(
+    @User() user: { userId: string },
+    @Query() query: ListExpensesByMonthQueryInputDto,
+  ) {
+    return this.expensesService.findByMonth(
+      user.userId,
+      query.year,
+      query.month,
+    );
   }
 
   @Patch(':id')

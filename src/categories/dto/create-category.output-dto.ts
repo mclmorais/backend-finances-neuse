@@ -10,5 +10,6 @@ const categoryOutputSchema = z.object({
   type: z.string(),
 });
 
-export class CreateCategoryOutputDto extends createZodDto(categoryOutputSchema) {}
-
+export class CreateCategoryOutputDto extends createZodDto(
+  categoryOutputSchema,
+) {}

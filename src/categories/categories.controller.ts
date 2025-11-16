@@ -76,4 +76,3 @@ export class CategoriesController {
     return this.categoriesService.delete(user.userId, params.id);
   }
 }
-

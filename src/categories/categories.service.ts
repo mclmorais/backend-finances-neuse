@@ -9,10 +9,7 @@ import { UpdateCategoryBodyInputDto } from './dto/update-category.input-dto';
 export class CategoriesService {
   constructor(private readonly dbService: DbService) {}
 
-  async create(
-    userId: string,
-    createCategoryDto: CreateCategoryBodyInputDto,
-  ) {
+  async create(userId: string, createCategoryDto: CreateCategoryBodyInputDto) {
     const [category] = await this.dbService.db
       .insert(categories)
       .values({
@@ -39,12 +36,7 @@ export class CategoriesService {
     const [category] = await this.dbService.db
       .update(categories)
       .set(updateCategoryDto)
-      .where(
-        and(
-          eq(categories.id, categoryId),
-          eq(categories.userId, userId),
-        ),
-      )
+      .where(and(eq(categories.id, categoryId), eq(categories.userId, userId)))
       .returning();
 
     if (!category) {
@@ -59,12 +51,7 @@ export class CategoriesService {
   async delete(userId: string, categoryId: number) {
     const [category] = await this.dbService.db
       .delete(categories)
-      .where(
-        and(
-          eq(categories.id, categoryId),
-          eq(categories.userId, userId),
-        ),
-      )
+      .where(and(eq(categories.id, categoryId), eq(categories.userId, userId)))
       .returning();
 
     if (!category) {
@@ -76,4 +63,3 @@ export class CategoriesService {
     return category;
   }
 }
-
