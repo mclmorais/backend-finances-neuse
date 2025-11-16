@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -13,6 +14,7 @@ import { SupabaseAuthGuard } from '../auth/guards/supabase-auth.guard';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryBodyInputDto } from './dto/create-category.input-dto';
 import { CreateCategoryOutputDto } from './dto/create-category.output-dto';
+import { ListCategoriesOutputDto } from './dto/list-categories.output-dto';
 
 @Controller('categories')
 @ApiBearerAuth('bearer')
@@ -28,6 +30,14 @@ export class CategoriesController {
     @Body() createCategoryDto: CreateCategoryBodyInputDto,
   ) {
     return this.categoriesService.create(user.userId, createCategoryDto);
+  }
+
+  @Get()
+  @UseGuards(SupabaseAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ZodResponse({ type: ListCategoriesOutputDto })
+  async findAll(@User() user: { userId: string }) {
+    return this.categoriesService.findAll(user.userId);
   }
 }
 
