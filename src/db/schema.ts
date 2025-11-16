@@ -5,6 +5,7 @@ import {
   pgTable,
   serial,
   text,
+  unique,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -61,3 +62,28 @@ export const incomes = pgTable('incomes', {
 
 export type InsertIncome = typeof incomes.$inferInsert;
 export type SelectIncome = typeof incomes.$inferSelect;
+
+export const categoryPlanning = pgTable(
+  'category_monthly_planning',
+  {
+    id: serial('id').primaryKey().notNull(),
+    userId: uuid('user_id').notNull(),
+    categoryId: integer('category_id')
+      .references(() => categories.id)
+      .notNull(),
+    month: integer('month').notNull(),
+    year: integer('year').notNull(),
+    value: decimal('value'),
+  },
+  (table) => ({
+    uniqueUserCategoryMonth: unique('unique_user_category_month').on(
+      table.userId,
+      table.categoryId,
+      table.month,
+      table.year,
+    ),
+  }),
+);
+
+export type InsertCategoryPlanning = typeof categoryPlanning.$inferInsert;
+export type SelectCategoryPlanning = typeof categoryPlanning.$inferSelect;

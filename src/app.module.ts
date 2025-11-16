@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CategoriesModule } from './categories/categories.module';
+import { CategoryPlanningModule } from './category-planning/category-planning.module';
 import { DbModule } from './db/db.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { IncomesModule } from './incomes/incomes.module';
@@ -17,6 +18,7 @@ import { HttpExceptionFilter } from './http-exception.filter';
     AuthModule,
     AccountsModule,
     CategoriesModule,
+    CategoryPlanningModule,
     ExpensesModule,
     IncomesModule,
   ],
