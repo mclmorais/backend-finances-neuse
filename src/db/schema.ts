@@ -1,4 +1,4 @@
-import { pgTable, serial, text, uuid } from 'drizzle-orm/pg-core';
+import { date, decimal, integer, pgTable, serial, text, uuid } from 'drizzle-orm/pg-core';
 
 export const categories = pgTable('categories', {
   id: serial('id').primaryKey().notNull(),
@@ -22,3 +22,16 @@ export const accounts = pgTable('accounts', {
 
 export type InsertAccount = typeof accounts.$inferInsert;
 export type SelectAccount = typeof accounts.$inferSelect;
+
+export const expenses = pgTable('expenses', {
+  id: serial('id').primaryKey().notNull(),
+  userId: uuid('user_id').notNull(),
+  accountId: integer('account_id').references(() => accounts.id).notNull(),
+  categoryId: integer('category_id').references(() => categories.id).notNull(),
+  date: date('date').notNull(),
+  description: text('description'),
+  value: decimal('value').notNull(),
+})
+
+export type InsertExpense = typeof expenses.$inferInsert;
+export type SelectExpense = typeof expenses.$inferSelect;

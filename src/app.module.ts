@@ -7,10 +7,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CategoriesModule } from './categories/categories.module';
 import { DbModule } from './db/db.module';
+import { ExpensesModule } from './expenses/expenses.module';
 import { HttpExceptionFilter } from './http-exception.filter';
 
 @Module({
-  imports: [DbModule, AuthModule, AccountsModule, CategoriesModule],
+  imports: [DbModule, AuthModule, AccountsModule, CategoriesModule, ExpensesModule],
   controllers: [AppController],
   providers: [
     AppService,
