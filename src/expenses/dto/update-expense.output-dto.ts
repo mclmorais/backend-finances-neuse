@@ -3,11 +3,7 @@ import { z } from 'zod';
 
 const expenseOutputSchema = z.object({
   id: z.number().int(),
-  userId: z
-    .string()
-    .regex(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-    ),
+  userId: z.uuid(),
   accountId: z.number().int(),
   categoryId: z.number().int(),
   date: z.string(),
