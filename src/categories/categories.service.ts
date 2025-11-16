@@ -55,5 +55,25 @@ export class CategoriesService {
 
     return category;
   }
+
+  async delete(userId: string, categoryId: number) {
+    const [category] = await this.dbService.db
+      .delete(categories)
+      .where(
+        and(
+          eq(categories.id, categoryId),
+          eq(categories.userId, userId),
+        ),
+      )
+      .returning();
+
+    if (!category) {
+      throw new NotFoundException(
+        `Category with ID ${categoryId} not found or does not belong to the user`,
+      );
+    }
+
+    return category;
+  }
 }
 

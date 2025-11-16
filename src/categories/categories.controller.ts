@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -16,6 +17,7 @@ import { SupabaseAuthGuard } from '../auth/guards/supabase-auth.guard';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryBodyInputDto } from './dto/create-category.input-dto';
 import { CreateCategoryOutputDto } from './dto/create-category.output-dto';
+import { DeleteCategoryParamsInputDto } from './dto/delete-category.input-dto';
 import { ListCategoriesOutputDto } from './dto/list-categories.output-dto';
 import {
   UpdateCategoryBodyInputDto,
@@ -61,6 +63,17 @@ export class CategoriesController {
       params.id,
       updateCategoryDto,
     );
+  }
+
+  @Delete(':id')
+  @UseGuards(SupabaseAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ZodResponse({ type: UpdateCategoryOutputDto })
+  async delete(
+    @User() user: { userId: string },
+    @Param() params: DeleteCategoryParamsInputDto,
+  ) {
+    return this.categoriesService.delete(user.userId, params.id);
   }
 }
 
