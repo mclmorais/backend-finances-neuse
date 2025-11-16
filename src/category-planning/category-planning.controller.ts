@@ -16,6 +16,7 @@ import { ZodResponse } from 'nestjs-zod';
 import { User } from '../auth/decorators/user.decorator';
 import { SupabaseAuthGuard } from '../auth/guards/supabase-auth.guard';
 import { CategoryPlanningService } from './category-planning.service';
+import { CategoryPlanningAnalysisOutputDto } from './dto/category-planning-analysis.output-dto';
 import { CreateCategoryPlanningBodyInputDto } from './dto/create-category-planning.input-dto';
 import { CreateCategoryPlanningOutputDto } from './dto/create-category-planning.output-dto';
 import { DeleteCategoryPlanningParamsInputDto } from './dto/delete-category-planning.input-dto';
@@ -65,6 +66,21 @@ export class CategoryPlanningController {
     @Query() query: ListCategoryPlanningByMonthQueryInputDto,
   ) {
     return this.categoryPlanningService.findByMonthYear(
+      user.userId,
+      query.year,
+      query.month,
+    );
+  }
+
+  @Get('analysis-by-month')
+  @UseGuards(SupabaseAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ZodResponse({ type: CategoryPlanningAnalysisOutputDto })
+  async getAnalysisByMonth(
+    @User() user: { userId: string },
+    @Query() query: ListCategoryPlanningByMonthQueryInputDto,
+  ) {
+    return this.categoryPlanningService.getCategoryPlanningAnalysis(
       user.userId,
       query.year,
       query.month,
