@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { and, eq, gte, lte, sql } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
-import { categories, categoryPlanning, expenses } from '../db/schema';
+import { categories, categoryPlanning, expenses, incomes } from '../db/schema';
 import { CreateCategoryPlanningBodyInputDto } from './dto/create-category-planning.input-dto';
 import { UpdateCategoryPlanningBodyInputDto } from './dto/update-category-planning.input-dto';
 
@@ -150,5 +150,79 @@ export class CategoryPlanningService {
     const spentAmount = parseFloat(spent || '0');
     const available = plannedAmount - spentAmount;
     return available.toFixed(2);
+  }
+
+  async getTotalIncomeByMonth(userId: string, year: number, month: number) {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+    const result = await this.dbService.db
+      .select({
+        totalIncome: sql<string>`COALESCE(SUM(${incomes.value}), '0')`,
+      })
+      .from(incomes)
+      .where(
+        and(
+          eq(incomes.userId, userId),
+          gte(incomes.date, startDate),
+          lte(incomes.date, endDate),
+        ),
+      );
+
+    return { totalIncome: result[0]?.totalIncome || '0' };
+  }
+
+  async copyFromPreviousMonth(
+    userId: string,
+    targetYear: number,
+    targetMonth: number,
+  ) {
+    // Calculate previous month
+    let previousMonth = targetMonth - 1;
+    let previousYear = targetYear;
+
+    if (previousMonth < 1) {
+      previousMonth = 12;
+      previousYear -= 1;
+    }
+
+    // Get planning from previous month
+    const previousPlanning = await this.findByMonthYear(
+      userId,
+      previousYear,
+      previousMonth,
+    );
+
+    if (previousPlanning.length === 0) {
+      return [];
+    }
+
+    // Delete existing planning for target month (if any)
+    await this.dbService.db
+      .delete(categoryPlanning)
+      .where(
+        and(
+          eq(categoryPlanning.userId, userId),
+          eq(categoryPlanning.year, targetYear),
+          eq(categoryPlanning.month, targetMonth),
+        ),
+      );
+
+    // Create new planning for target month based on previous month
+    const newPlanningValues = previousPlanning.map((plan) => ({
+      userId,
+      categoryId: plan.categoryId,
+      month: targetMonth,
+      year: targetYear,
+      value: plan.value,
+    }));
+
+    const result = await this.dbService.db
+      .insert(categoryPlanning)
+      .values(newPlanningValues)
+      .returning();
+
+    return result;
   }
 }

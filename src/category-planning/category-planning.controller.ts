@@ -17,11 +17,13 @@ import { User } from '../auth/decorators/user.decorator';
 import { SupabaseAuthGuard } from '../auth/guards/supabase-auth.guard';
 import { CategoryPlanningService } from './category-planning.service';
 import { CategoryPlanningAnalysisOutputDto } from './dto/category-planning-analysis.output-dto';
+import { CopyPlanningBodyInputDto } from './dto/copy-planning.input-dto';
 import { CreateCategoryPlanningBodyInputDto } from './dto/create-category-planning.input-dto';
 import { CreateCategoryPlanningOutputDto } from './dto/create-category-planning.output-dto';
 import { DeleteCategoryPlanningParamsInputDto } from './dto/delete-category-planning.input-dto';
 import { ListCategoryPlanningByMonthQueryInputDto } from './dto/list-category-planning-by-month.input-dto';
 import { ListCategoryPlanningOutputDto } from './dto/list-category-planning.output-dto';
+import { TotalIncomeOutputDto } from './dto/total-income.output-dto';
 import {
   UpdateCategoryPlanningBodyInputDto,
   UpdateCategoryPlanningParamsInputDto,
@@ -112,5 +114,35 @@ export class CategoryPlanningController {
     @Param() params: DeleteCategoryPlanningParamsInputDto,
   ) {
     return this.categoryPlanningService.delete(user.userId, params.id);
+  }
+
+  @Get('total-income')
+  @UseGuards(SupabaseAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ZodResponse({ type: TotalIncomeOutputDto })
+  async getTotalIncome(
+    @User() user: { userId: string },
+    @Query() query: ListCategoryPlanningByMonthQueryInputDto,
+  ) {
+    return this.categoryPlanningService.getTotalIncomeByMonth(
+      user.userId,
+      query.year,
+      query.month,
+    );
+  }
+
+  @Post('copy-from-previous')
+  @UseGuards(SupabaseAuthGuard)
+  @HttpCode(HttpStatus.CREATED)
+  @ZodResponse({ type: ListCategoryPlanningOutputDto })
+  async copyFromPrevious(
+    @User() user: { userId: string },
+    @Body() body: CopyPlanningBodyInputDto,
+  ) {
+    return this.categoryPlanningService.copyFromPreviousMonth(
+      user.userId,
+      body.targetYear,
+      body.targetMonth,
+    );
   }
 }
