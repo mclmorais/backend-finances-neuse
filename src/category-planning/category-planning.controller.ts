@@ -23,6 +23,8 @@ import { CreateCategoryPlanningOutputDto } from './dto/create-category-planning.
 import { DeleteCategoryPlanningParamsInputDto } from './dto/delete-category-planning.input-dto';
 import { ListCategoryPlanningByMonthQueryInputDto } from './dto/list-category-planning-by-month.input-dto';
 import { ListCategoryPlanningOutputDto } from './dto/list-category-planning.output-dto';
+import { PreviousMonthsRemainingQueryInputDto } from './dto/previous-months-remaining.input-dto';
+import { PreviousMonthsRemainingOutputDto } from './dto/previous-months-remaining.output-dto';
 import { TotalIncomeOutputDto } from './dto/total-income.output-dto';
 import {
   UpdateCategoryPlanningBodyInputDto,
@@ -125,6 +127,21 @@ export class CategoryPlanningController {
     @Query() query: ListCategoryPlanningByMonthQueryInputDto,
   ) {
     return this.categoryPlanningService.getTotalIncomeByMonth(
+      user.userId,
+      query.year,
+      query.month,
+    );
+  }
+
+  @Get('previous-months-remaining')
+  @UseGuards(SupabaseAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ZodResponse({ type: PreviousMonthsRemainingOutputDto })
+  async getPreviousMonthsRemaining(
+    @User() user: { userId: string },
+    @Query() query: PreviousMonthsRemainingQueryInputDto,
+  ) {
+    return this.categoryPlanningService.getPreviousMonthsRemaining(
       user.userId,
       query.year,
       query.month,

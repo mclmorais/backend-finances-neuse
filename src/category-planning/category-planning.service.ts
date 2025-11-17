@@ -113,6 +113,7 @@ export class CategoryPlanningService {
         categoryPlanning,
         and(
           eq(categoryPlanning.categoryId, categories.id),
+          eq(categoryPlanning.userId, userId),
           eq(categoryPlanning.month, month),
           eq(categoryPlanning.year, year),
         ),
@@ -121,6 +122,7 @@ export class CategoryPlanningService {
         expenses,
         and(
           eq(expenses.categoryId, categories.id),
+          eq(expenses.userId, userId),
           gte(expenses.date, startDate),
           lte(expenses.date, endDate),
         ),
@@ -224,5 +226,90 @@ export class CategoryPlanningService {
       .returning();
 
     return result;
+  }
+
+  async getPreviousMonthsRemaining(
+    userId: string,
+    targetYear: number,
+    targetMonth: number,
+  ) {
+    // Create target date for comparison
+    const targetDate = new Date(targetYear, targetMonth - 1, 1);
+    const targetDateStr = `${targetYear}-${String(targetMonth).padStart(2, '0')}-01`;
+
+    // Get all categories for the user
+    const userCategories = await this.dbService.db
+      .select()
+      .from(categories)
+      .where(eq(categories.userId, userId));
+
+    // Get all planning records for the user
+    const allPlanning = await this.dbService.db
+      .select()
+      .from(categoryPlanning)
+      .where(eq(categoryPlanning.userId, userId));
+
+    // Filter planning records before target month
+    const previousPlanning = allPlanning.filter((plan) => {
+      const planDate = new Date(plan.year, plan.month - 1, 1);
+      return planDate < targetDate;
+    });
+
+    // Get all expenses before target month
+    const allExpenses = await this.dbService.db
+      .select()
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.userId, userId),
+          sql`${expenses.date} < ${targetDateStr}`,
+        ),
+      );
+
+    // Calculate cumulative remaining for each category
+    const results = userCategories.map((category) => {
+      // Get planning records for this category
+      const categoryPlanningRecords = previousPlanning.filter(
+        (p) => p.categoryId === category.id,
+      );
+
+      let cumulativeRemaining = 0;
+
+      // For each planning period, calculate remaining amount
+      for (const plan of categoryPlanningRecords) {
+        // Calculate date range for this month
+        const startDate = `${plan.year}-${String(plan.month).padStart(2, '0')}-01`;
+        const lastDay = new Date(plan.year, plan.month, 0).getDate();
+        const endDate = `${plan.year}-${String(plan.month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+        // Sum expenses for this month and category
+        const monthExpenses = allExpenses.filter(
+          (e) =>
+            e.categoryId === category.id &&
+            e.date >= startDate &&
+            e.date <= endDate,
+        );
+
+        const totalSpent = monthExpenses.reduce(
+          (sum, e) => sum + parseFloat(e.value),
+          0,
+        );
+
+        const planned = parseFloat(plan.value || '0');
+        const remaining = planned - totalSpent;
+        cumulativeRemaining += remaining;
+      }
+
+      return {
+        categoryId: category.id,
+        categoryName: category.name,
+        categoryColor: category.color,
+        categoryIcon: category.icon,
+        categoryType: category.type,
+        cumulativeRemaining: cumulativeRemaining.toFixed(2),
+      };
+    });
+
+    return results;
   }
 }
