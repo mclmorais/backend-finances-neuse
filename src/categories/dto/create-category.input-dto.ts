@@ -7,7 +7,7 @@ const createCategorySchema = z.object({
   }),
   icon: z.string(),
   name: z.string(),
-  type: z.string(),
+  type: z.enum(['expense', 'saving']),
 });
 
 export class CreateCategoryBodyInputDto extends createZodDto(createCategorySchema) {}
