@@ -10,5 +10,6 @@ const createCategorySchema = z.object({
   type: z.enum(['expense', 'saving']),
 });
 
-export class CreateCategoryBodyInputDto extends createZodDto(createCategorySchema) {}
-
+export class CreateCategoryBodyInputDto extends createZodDto(
+  createCategorySchema,
+) {}

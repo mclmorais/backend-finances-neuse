@@ -12,4 +12,6 @@ const categorySchema = z.object({
 
 const listCategoriesOutputSchema = z.array(categorySchema);
 
-export class ListCategoriesOutputDto extends createZodDto(listCategoriesOutputSchema) {}
+export class ListCategoriesOutputDto extends createZodDto(
+  listCategoriesOutputSchema,
+) {}

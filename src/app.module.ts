@@ -11,7 +11,13 @@ import { ExpensesModule } from './expenses/expenses.module';
 import { HttpExceptionFilter } from './http-exception.filter';
 
 @Module({
-  imports: [DbModule, AuthModule, AccountsModule, CategoriesModule, ExpensesModule],
+  imports: [
+    DbModule,
+    AuthModule,
+    AccountsModule,
+    CategoriesModule,
+    ExpensesModule,
+  ],
   controllers: [AppController],
   providers: [
     AppService,

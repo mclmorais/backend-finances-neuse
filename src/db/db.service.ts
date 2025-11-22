@@ -22,4 +22,3 @@ export class DbService {
     await this.client.end();
   }
 }
-

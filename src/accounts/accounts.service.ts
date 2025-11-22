@@ -36,9 +36,7 @@ export class AccountsService {
     const [account] = await this.dbService.db
       .update(accounts)
       .set(updateAccountDto)
-      .where(
-        and(eq(accounts.id, accountId), eq(accounts.userId, userId)),
-      )
+      .where(and(eq(accounts.id, accountId), eq(accounts.userId, userId)))
       .returning();
 
     if (!account) {
@@ -53,9 +51,7 @@ export class AccountsService {
   async delete(userId: string, accountId: number) {
     const [account] = await this.dbService.db
       .delete(accounts)
-      .where(
-        and(eq(accounts.id, accountId), eq(accounts.userId, userId)),
-      )
+      .where(and(eq(accounts.id, accountId), eq(accounts.userId, userId)))
       .returning();
 
     if (!account) {

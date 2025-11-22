@@ -36,9 +36,7 @@ export class ExpensesService {
     const [expense] = await this.dbService.db
       .update(expenses)
       .set(updateExpenseDto)
-      .where(
-        and(eq(expenses.id, expenseId), eq(expenses.userId, userId)),
-      )
+      .where(and(eq(expenses.id, expenseId), eq(expenses.userId, userId)))
       .returning();
 
     if (!expense) {
@@ -53,9 +51,7 @@ export class ExpensesService {
   async delete(userId: string, expenseId: number) {
     const [expense] = await this.dbService.db
       .delete(expenses)
-      .where(
-        and(eq(expenses.id, expenseId), eq(expenses.userId, userId)),
-      )
+      .where(and(eq(expenses.id, expenseId), eq(expenses.userId, userId)))
       .returning();
 
     if (!expense) {
