@@ -15,7 +15,10 @@ export class AuthService {
       );
     }
 
-    this.supabase = createClient(supabaseUrl, supabaseAnonKey);
+    this.supabase = createClient(
+      supabaseUrl,
+      supabaseAnonKey,
+    ) as SupabaseClient;
   }
 
   async verifyToken(token: string): Promise<{ userId: string }> {
