@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, gte, lte, sql } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
-import { expenses } from '../db/schema';
+import { categories, expenses } from '../db/schema';
 import { CreateExpenseBodyInputDto } from './dto/create-expense.input-dto';
 import { UpdateExpenseBodyInputDto } from './dto/update-expense.input-dto';
 
@@ -61,5 +61,54 @@ export class ExpensesService {
     }
 
     return expense;
+  }
+
+  async findByMonth(userId: string, year: number, month: number) {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+    return this.dbService.db
+      .select()
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.userId, userId),
+          gte(expenses.date, startDate),
+          lte(expenses.date, endDate),
+        ),
+      );
+  }
+
+  async getMonthlySummary(userId: string, year: number, month: number) {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+    return this.dbService.db
+      .select({
+        categoryId: expenses.categoryId,
+        categoryName: categories.name,
+        categoryIcon: categories.icon,
+        categoryColor: categories.color,
+        totalValue: sql<string>`CAST(SUM(${expenses.value}) AS TEXT)`,
+        expenseCount: sql<number>`CAST(COUNT(*) AS INTEGER)`,
+      })
+      .from(expenses)
+      .innerJoin(categories, eq(expenses.categoryId, categories.id))
+      .where(
+        and(
+          eq(expenses.userId, userId),
+          gte(expenses.date, startDate),
+          lte(expenses.date, endDate),
+        ),
+      )
+      .groupBy(
+        expenses.categoryId,
+        categories.name,
+        categories.icon,
+        categories.color,
+      )
+      .orderBy(sql`SUM(${expenses.value}) DESC`);
   }
 }

@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
@@ -19,6 +20,8 @@ import { CreateExpenseBodyInputDto } from './dto/create-expense.input-dto';
 import { CreateExpenseOutputDto } from './dto/create-expense.output-dto';
 import { DeleteExpenseParamsInputDto } from './dto/delete-expense.input-dto';
 import { ListExpensesOutputDto } from './dto/list-expenses.output-dto';
+import { ListMonthlyExpensesQueryInputDto } from './dto/list-monthly-expenses.input-dto';
+import { MonthlySummaryOutputDto } from './dto/monthly-summary.output-dto';
 import {
   UpdateExpenseBodyInputDto,
   UpdateExpenseParamsInputDto,
@@ -47,6 +50,36 @@ export class ExpensesController {
   @ZodResponse({ type: ListExpensesOutputDto })
   async findAll(@User() user: { userId: string }) {
     return this.expensesService.findAll(user.userId);
+  }
+
+  @Get('monthly')
+  @UseGuards(SupabaseAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ZodResponse({ type: ListExpensesOutputDto })
+  async findMonthly(
+    @User() user: { userId: string },
+    @Query() query: ListMonthlyExpensesQueryInputDto,
+  ) {
+    return this.expensesService.findByMonth(
+      user.userId,
+      query.year,
+      query.month,
+    );
+  }
+
+  @Get('monthly/summary')
+  @UseGuards(SupabaseAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ZodResponse({ type: MonthlySummaryOutputDto })
+  async getMonthlySummary(
+    @User() user: { userId: string },
+    @Query() query: ListMonthlyExpensesQueryInputDto,
+  ) {
+    return this.expensesService.getMonthlySummary(
+      user.userId,
+      query.year,
+      query.month,
+    );
   }
 
   @Patch(':id')
