@@ -3,7 +3,6 @@ config();
 
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { apiReference } from '@scalar/nestjs-api-reference';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 import { AppModule } from './app.module';
 
@@ -28,22 +27,11 @@ async function bootstrap() {
       .build(),
   );
 
-  app.use(
-    '/api',
-    apiReference({
-      content: cleanupOpenApiDoc(openApiDoc),
-      authentication: {
-        preferredSecurityScheme: 'bearer',
-        securitySchemes: {
-          bearer: {
-            type: 'http',
-            scheme: 'bearer',
-            bearerFormat: 'JWT',
-          },
-        },
-      },
-    }),
-  );
+  SwaggerModule.setup('api', app, cleanupOpenApiDoc(openApiDoc), {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  });
 
   await app.listen(process.env.PORT ?? 3000);
 }
