@@ -14,7 +14,12 @@ export class DbService {
       throw new Error('DATABASE_URL environment variable is not set');
     }
 
-    this.client = postgres(connectionString);
+    // Configure for serverless environment (Vercel)
+    this.client = postgres(connectionString, {
+      max: 1, // Limit connection pool size for serverless
+      idle_timeout: 20, // Close idle connections quickly
+      connect_timeout: 10, // Timeout if connection takes too long
+    });
     this.db = drizzle(this.client, { schema });
   }
 
