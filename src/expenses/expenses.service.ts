@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { and, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
 import { categories, expenses } from '../db/schema';
 import { CreateExpenseBodyInputDto } from './dto/create-expense.input-dto';
@@ -77,7 +77,8 @@ export class ExpensesService {
           gte(expenses.date, startDate),
           lte(expenses.date, endDate),
         ),
-      );
+      )
+      .orderBy(desc(expenses.date), desc(expenses.id));
   }
 
   async getMonthlySummary(userId: string, year: number, month: number) {
