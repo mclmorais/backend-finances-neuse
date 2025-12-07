@@ -47,3 +47,17 @@ export const expenses = pgTable('expenses', {
 
 export type InsertExpense = typeof expenses.$inferInsert;
 export type SelectExpense = typeof expenses.$inferSelect;
+
+export const incomes = pgTable('incomes', {
+  id: serial('id').primaryKey().notNull(),
+  userId: uuid('user_id').notNull(),
+  accountId: integer('account_id')
+    .references(() => accounts.id)
+    .notNull(),
+  date: date('date').notNull(),
+  description: text('description'),
+  value: decimal('value').notNull(),
+});
+
+export type InsertIncome = typeof incomes.$inferInsert;
+export type SelectIncome = typeof incomes.$inferSelect;
