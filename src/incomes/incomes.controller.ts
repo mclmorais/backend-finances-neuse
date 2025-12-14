@@ -114,11 +114,7 @@ export class IncomesController {
     @Param() params: UpdateIncomeParamsInputDto,
     @Body() updateIncomeDto: UpdateIncomeBodyInputDto,
   ) {
-    return this.incomesService.update(
-      user.userId,
-      params.id,
-      updateIncomeDto,
-    );
+    return this.incomesService.update(user.userId, params.id, updateIncomeDto);
   }
 
   @Delete(':id')
