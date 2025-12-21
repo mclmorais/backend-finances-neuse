@@ -6,4 +6,5 @@ import z from "zod";
 export class MonthlyCategoriesBudgetComparisonQueryInputDto extends createZodDto(z.object({
     year: yearStringZod,
     month: monthStringZod,
+    categoryType: z.enum(['all', 'expense', 'saving']).optional().default('all'),
 })) { }

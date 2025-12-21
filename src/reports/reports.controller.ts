@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Query, UseGuards, } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ZodResponse } from 'nestjs-zod';
 import { User } from '../auth/decorators/user.decorator';
@@ -17,6 +9,7 @@ import { MonthlyComparisonOutputDto } from './dto/monthly-comparison.output-dto'
 import { BalanceTrendQueryInputDto } from './dto/balance-trend.input-dto';
 import { BalanceTrendOutputDto } from './dto/balance-trend.output-dto';
 import { MonthlyCategoriesBudgetComparisonQueryInputDto } from './dto/monthly-categories-budget-comparison.input-dto';
+import { MonthlyCategoriesBudgetComparisonOutputDto } from './dto/monthly-categories-budget-comparison.output-dto';
 
 @Controller('reports')
 @ApiBearerAuth('bearer')
@@ -65,22 +58,23 @@ export class ReportsController {
     );
   }
 
-  @Get('monthly-categories-budget-comparison/:userId')
-  // @UseGuards(SupabaseAuthGuard)
+  @Get('monthly-categories-budget-comparison')
+  @UseGuards(SupabaseAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Compare categories budget vs actual expenses for a specific month',
-    description: 'Returns the budget allocation for each category and the actual expenses for the specified month',
+    description: 'Returns the budget allocation for each category and the actual expenses for the specified month. Optionally filter by category type (all, expense, or saving)',
   })
-  // @ZodResponse({ type: MonthlyCategoriesBudgetComparisonOutputDto })
+  @ZodResponse({ type: MonthlyCategoriesBudgetComparisonOutputDto })
   async getMonthlyCategoriesBudgetComparison(
-    @Param('userId') userId: string,
+    @User() user: { userId: string },
     @Query() query: MonthlyCategoriesBudgetComparisonQueryInputDto,
   ) {
     return this.reportsService.getMonthlyCategoriesBudgetComparison(
-      userId,
+      user.userId,
       query.year,
       query.month,
+      query.categoryType,
     );
   }
 }
