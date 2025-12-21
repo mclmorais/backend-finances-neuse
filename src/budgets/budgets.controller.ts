@@ -28,6 +28,8 @@ import {
   UpdateBudgetParamsInputDto,
 } from './dto/update-budget.input-dto';
 import { UpdateBudgetOutputDto } from './dto/update-budget.output-dto';
+import { GetCarryoverQueryInputDto } from './dto/get-carryover.input-dto';
+import { GetCarryoverOutputDto } from './dto/get-carryover.output-dto';
 
 @Controller('budgets')
 @ApiBearerAuth('bearer')
@@ -91,6 +93,26 @@ export class BudgetsController {
     @Query() query: ListMonthlyBudgetsQueryInputDto,
   ) {
     return this.budgetsService.findByMonth(
+      user.userId,
+      query.year,
+      query.month,
+    );
+  }
+
+  @Get('carryover')
+  @UseGuards(SupabaseAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get budget carryover for a specific month',
+    description:
+      'Returns the cumulative remaining value (budgeted - spent) per account-category for all months before the specified month',
+  })
+  @ZodResponse({ type: GetCarryoverOutputDto })
+  async getCarryover(
+    @User() user: { userId: string },
+    @Query() query: GetCarryoverQueryInputDto,
+  ) {
+    return await this.budgetsService.getCarryover(
       user.userId,
       query.year,
       query.month,
