@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, eq, gte, lt, lte, sql } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
 import { budgets, categories, expenses, incomes } from '../db/schema';
 
@@ -109,6 +109,33 @@ export class ReportsService {
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
     const lastDay = new Date(year, month, 0).getDate();
     const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    const cutoffDate = startDate; // Carryover is calculated for all months before the selected month
+
+    // Subquery for budget totals per category (summed across accounts) before the cutoff date
+    const budgetTotalsCarryover = this.dbService.db
+      .select({
+        categoryId: budgets.categoryId,
+        totalBudget: sql<string>`CAST(COALESCE(SUM(${budgets.value}), 0) AS TEXT)`.as(
+          'totalBudget',
+        ),
+      })
+      .from(budgets)
+      .where(and(eq(budgets.userId, userId), lt(budgets.date, cutoffDate)))
+      .groupBy(budgets.categoryId)
+      .as('budgetTotalsCarryover');
+
+    // Subquery for expense totals per category (summed across accounts) before the cutoff date
+    const expenseTotalsCarryover = this.dbService.db
+      .select({
+        categoryId: expenses.categoryId,
+        totalExpense: sql<string>`CAST(COALESCE(SUM(${expenses.value}), 0) AS TEXT)`.as(
+          'totalExpense',
+        ),
+      })
+      .from(expenses)
+      .where(and(eq(expenses.userId, userId), lt(expenses.date, cutoffDate)))
+      .groupBy(expenses.categoryId)
+      .as('expenseTotalsCarryover');
 
     const budgetSubquery = this.dbService.db
       .select({
@@ -132,6 +159,16 @@ export class ReportsService {
         categoryColor: categories.color,
         expensesSum: sql<string>`CAST(COALESCE(SUM(${expenses.value}), 0) AS TEXT)`,
         budget: sql<string>`COALESCE(${budgetSubquery.budgetSum}, '0')`,
+        carryover: sql<string>`CAST(
+          COALESCE(${budgetTotalsCarryover.totalBudget}::numeric, 0) - 
+          COALESCE(${expenseTotalsCarryover.totalExpense}::numeric, 0) 
+        AS TEXT)`,
+        delta: sql<string>`CAST(
+          COALESCE(${budgetSubquery.budgetSum}::numeric, 0) + 
+          (COALESCE(${budgetTotalsCarryover.totalBudget}::numeric, 0) - 
+           COALESCE(${expenseTotalsCarryover.totalExpense}::numeric, 0)) - 
+          COALESCE(SUM(${expenses.value})::numeric, 0)
+        AS TEXT)`,
       })
       .from(categories)
       .leftJoin(expenses,
@@ -143,8 +180,18 @@ export class ReportsService {
         )
       )
       .leftJoin(budgetSubquery, eq(categories.id, budgetSubquery.categoryId))
+      .leftJoin(budgetTotalsCarryover, eq(categories.id, budgetTotalsCarryover.categoryId))
+      .leftJoin(expenseTotalsCarryover, eq(categories.id, expenseTotalsCarryover.categoryId))
       .where(and(...whereConditions))
-      .groupBy(categories.id, categories.name, budgetSubquery.budgetSum)
+      .groupBy(
+        categories.id,
+        categories.name,
+        categories.icon,
+        categories.color,
+        budgetSubquery.budgetSum,
+        budgetTotalsCarryover.totalBudget,
+        expenseTotalsCarryover.totalExpense,
+      )
 
     return result
   }

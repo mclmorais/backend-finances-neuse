@@ -6,7 +6,9 @@ const monthlyCategoriesBudgetComparisonItemSchema = z.object({
     categoryIcon: z.string(),
     categoryColor: z.string(),
     expensesSum: z.string(),
-    budget: z.string()
+    budget: z.string(),
+    carryover: z.string(),
+    delta: z.string(),
 });
 
 export class MonthlyCategoriesBudgetComparisonOutputDto extends createZodDto(
