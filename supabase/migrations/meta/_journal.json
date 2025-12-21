@@ -43,6 +43,13 @@
       "when": 1765721500077,
       "tag": "0005_clean_maria_hill",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1766348571426,
+      "tag": "0006_add-savings-type-to-expenses",
+      "breakpoints": true
     }
   ]
 }

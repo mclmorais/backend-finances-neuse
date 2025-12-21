@@ -44,6 +44,7 @@ export const expenses = pgTable('expenses', {
   date: date('date').notNull(),
   description: text('description'),
   value: decimal('value').notNull(),
+  savingsType: text('savings_type'), // 'deposit' | 'withdrawal' | null
 });
 
 export type InsertExpense = typeof expenses.$inferInsert;

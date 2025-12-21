@@ -26,42 +26,26 @@ export class BudgetsService {
     userId: string,
     batchCreateDto: BatchCreateBudgetsBodyInputDto,
   ) {
-    const created = [];
-    const errors = [];
+    const results = [];
 
-    // Process each budget individually to handle conflicts gracefully
+    // Process each budget with upsert - update if exists, insert if not
     for (const budgetData of batchCreateDto.budgets) {
-      try {
-        const [budget] = await this.dbService.db
-          .insert(budgets)
-          .values({
-            ...budgetData,
-            userId,
-          })
-          .returning();
+      const [budget] = await this.dbService.db
+        .insert(budgets)
+        .values({
+          ...budgetData,
+          userId,
+        })
+        .onConflictDoUpdate({
+          target: [budgets.userId, budgets.accountId, budgets.categoryId, budgets.date],
+          set: { value: budgetData.value },
+        })
+        .returning();
 
-        created.push(budget);
-      } catch (error) {
-        // Check if it's a unique constraint violation (PostgreSQL error code 23505)
-        if (
-          error &&
-          typeof error === 'object' &&
-          'code' in error &&
-          (error as { code: string }).code === '23505'
-        ) {
-          errors.push({
-            budget: budgetData,
-            error:
-              'Budget allocation already exists for this account-category-month combination',
-          });
-        } else {
-          // Re-throw unexpected errors
-          throw error;
-        }
-      }
+      results.push(budget);
     }
 
-    return { created, errors };
+    return { created: results, errors: [] };
   }
 
   async findAll(userId: string) {

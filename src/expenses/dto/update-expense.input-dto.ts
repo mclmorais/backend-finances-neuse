@@ -24,6 +24,7 @@ const updateExpenseBodySchema = z.object({
       message: 'Value must be a valid decimal number (e.g., 10.50)',
     })
     .optional(),
+  savingsType: z.enum(['deposit', 'withdrawal']).nullable().optional(),
 });
 
 export class UpdateExpenseParamsInputDto extends createZodDto(
