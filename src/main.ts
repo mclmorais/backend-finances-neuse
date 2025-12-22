@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-config();
+config({ quiet: true });
 
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
