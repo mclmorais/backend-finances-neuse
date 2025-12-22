@@ -5,7 +5,6 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 import { AppModule } from './app.module';
-import { apiReference } from '@scalar/nestjs-api-reference'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
@@ -33,15 +32,6 @@ async function bootstrap() {
       persistAuthorization: true,
     },
   });
-
-
-  app.use(
-    '/reference',
-    apiReference({
-      url: 'api-json',
-    }),
-  )
-
 
   await app.listen(process.env.PORT ?? 3000);
 }
