@@ -22,6 +22,8 @@ import { DeleteExpenseParamsInputDto } from './dto/delete-expense.input-dto';
 import { ListExpensesOutputDto } from './dto/list-expenses.output-dto';
 import { ListMonthlyExpensesQueryInputDto } from './dto/list-monthly-expenses.input-dto';
 import { MonthlySummaryOutputDto } from './dto/monthly-summary.output-dto';
+import { MonthlySavingsQueryInputDto } from './dto/monthly-savings.input-dto';
+import { MonthlySavingsOutputDto } from './dto/monthly-savings.output-dto';
 import {
   UpdateExpenseBodyInputDto,
   UpdateExpenseParamsInputDto,
@@ -80,6 +82,25 @@ export class ExpensesController {
       query.year,
       query.month,
     );
+  }
+
+  @Get('monthly-savings')
+  @UseGuards(SupabaseAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ZodResponse({ type: MonthlySavingsOutputDto })
+  async getMonthlySavings(
+    @User() user: { userId: string },
+    @Query() query: MonthlySavingsQueryInputDto,
+  ) {
+    const result = await this.expensesService.getMonthlySavingsEvolution(
+      user.userId,
+      query.startYear,
+      query.startMonth,
+      query.endYear,
+      query.endMonth,
+      query.categoryType,
+    );
+    return result;
   }
 
   @Patch(':id')
