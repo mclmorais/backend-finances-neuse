@@ -1,0 +1,198 @@
+import { Injectable } from '@nestjs/common';
+import { and, eq, gte, lt, lte, sql } from 'drizzle-orm';
+import { DbService } from '../db/db.service';
+import { budgets, categories, expenses, incomes } from '../db/schema';
+
+@Injectable()
+export class ReportsService {
+  constructor(private readonly dbService: DbService) { }
+
+  async getMonthlyComparison(userId: string, year: number, month: number) {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+    // Get income summary
+    const [incomeSummary] = await this.dbService.db
+      .select({
+        totalIncome: sql<string>`CAST(COALESCE(SUM(${incomes.value}), 0) AS TEXT)`,
+        incomeCount: sql<number>`CAST(COUNT(*) AS INTEGER)`,
+      })
+      .from(incomes)
+      .where(
+        and(
+          eq(incomes.userId, userId),
+          gte(incomes.date, startDate),
+          lte(incomes.date, endDate),
+        ),
+      );
+
+    // Get expense summary
+    const [expenseSummary] = await this.dbService.db
+      .select({
+        totalExpenses: sql<string>`CAST(COALESCE(SUM(${expenses.value}), 0) AS TEXT)`,
+        expenseCount: sql<number>`CAST(COUNT(*) AS INTEGER)`,
+      })
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.userId, userId),
+          gte(expenses.date, startDate),
+          lte(expenses.date, endDate),
+        ),
+      );
+
+    const totalIncome = parseFloat(incomeSummary?.totalIncome || '0');
+    const totalExpenses = parseFloat(expenseSummary?.totalExpenses || '0');
+    const netBalance = (totalIncome - totalExpenses).toFixed(2);
+
+    return {
+      year,
+      month,
+      totalIncome: incomeSummary?.totalIncome || '0',
+      totalExpenses: expenseSummary?.totalExpenses || '0',
+      netBalance,
+      incomeCount: incomeSummary?.incomeCount || 0,
+      expenseCount: expenseSummary?.expenseCount || 0,
+    };
+  }
+
+  async getBalanceTrend(
+    userId: string,
+    startYear: number,
+    startMonth: number,
+    endYear: number,
+    endMonth: number,
+  ) {
+    // Generate array of months between start and end
+    const months = [];
+    let currentYear = startYear;
+    let currentMonth = startMonth;
+
+    while (
+      currentYear < endYear ||
+      (currentYear === endYear && currentMonth <= endMonth)
+    ) {
+      months.push({ year: currentYear, month: currentMonth });
+
+      currentMonth++;
+      if (currentMonth > 12) {
+        currentMonth = 1;
+        currentYear++;
+      }
+    }
+
+    // Fetch data for each month
+    const monthlyData = await Promise.all(
+      months.map((m) => this.getMonthlyComparison(userId, m.year, m.month)),
+    );
+
+    // Calculate cumulative balance
+    let cumulative = 0;
+    return monthlyData.map((data) => {
+      const netBalance = parseFloat(data.netBalance);
+      cumulative += netBalance;
+
+      return {
+        ...data,
+        cumulativeBalance: cumulative.toFixed(2),
+      };
+    });
+  }
+
+  async getMonthlyCategoriesBudgetComparison(
+    userId: string,
+    year: number,
+    month: number,
+    categoryType: 'all' | 'expense' | 'saving' = 'all',
+  ) {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    const cutoffDate = startDate; // Carryover is calculated for all months before the selected month
+
+    // Subquery for budget totals per category (summed across accounts) before the cutoff date
+    const budgetTotalsCarryover = this.dbService.db
+      .select({
+        categoryId: budgets.categoryId,
+        totalBudget: sql<string>`CAST(COALESCE(SUM(${budgets.value}), 0) AS TEXT)`.as(
+          'totalBudget',
+        ),
+      })
+      .from(budgets)
+      .where(and(eq(budgets.userId, userId), lt(budgets.date, cutoffDate)))
+      .groupBy(budgets.categoryId)
+      .as('budgetTotalsCarryover');
+
+    // Subquery for expense totals per category (summed across accounts) before the cutoff date
+    const expenseTotalsCarryover = this.dbService.db
+      .select({
+        categoryId: expenses.categoryId,
+        totalExpense: sql<string>`CAST(COALESCE(SUM(${expenses.value}), 0) AS TEXT)`.as(
+          'totalExpense',
+        ),
+      })
+      .from(expenses)
+      .where(and(eq(expenses.userId, userId), lt(expenses.date, cutoffDate)))
+      .groupBy(expenses.categoryId)
+      .as('expenseTotalsCarryover');
+
+    const budgetSubquery = this.dbService.db
+      .select({
+        categoryId: budgets.categoryId,
+        budgetSum: sql<string>`CAST(COALESCE(SUM(${budgets.value}), 0) AS TEXT)`.as('budgetSum'),
+      })
+      .from(budgets)
+      .where(and(eq(budgets.userId, userId), gte(budgets.date, startDate), lte(budgets.date, endDate)))
+      .groupBy(budgets.categoryId)
+      .as('budgetSubquery')
+
+    const whereConditions = [eq(categories.userId, userId)];
+    if (categoryType !== 'all') {
+      whereConditions.push(eq(categories.type, categoryType));
+    }
+
+    const result = await this.dbService.db
+      .select({
+        categoryName: categories.name,
+        categoryIcon: categories.icon,
+        categoryColor: categories.color,
+        expensesSum: sql<string>`CAST(COALESCE(SUM(${expenses.value}), 0) AS TEXT)`,
+        budget: sql<string>`COALESCE(${budgetSubquery.budgetSum}, '0')`,
+        carryover: sql<string>`CAST(
+          COALESCE(${budgetTotalsCarryover.totalBudget}::numeric, 0) - 
+          COALESCE(${expenseTotalsCarryover.totalExpense}::numeric, 0) 
+        AS TEXT)`,
+        delta: sql<string>`CAST(
+          COALESCE(${budgetSubquery.budgetSum}::numeric, 0) + 
+          (COALESCE(${budgetTotalsCarryover.totalBudget}::numeric, 0) - 
+           COALESCE(${expenseTotalsCarryover.totalExpense}::numeric, 0)) - 
+          COALESCE(SUM(${expenses.value})::numeric, 0)
+        AS TEXT)`,
+      })
+      .from(categories)
+      .leftJoin(expenses,
+        and(
+          eq(expenses.categoryId, categories.id),
+          eq(expenses.userId, userId),
+          gte(expenses.date, startDate),
+          lte(expenses.date, endDate),
+        )
+      )
+      .leftJoin(budgetSubquery, eq(categories.id, budgetSubquery.categoryId))
+      .leftJoin(budgetTotalsCarryover, eq(categories.id, budgetTotalsCarryover.categoryId))
+      .leftJoin(expenseTotalsCarryover, eq(categories.id, expenseTotalsCarryover.categoryId))
+      .where(and(...whereConditions))
+      .groupBy(
+        categories.id,
+        categories.name,
+        categories.icon,
+        categories.color,
+        budgetSubquery.budgetSum,
+        budgetTotalsCarryover.totalBudget,
+        expenseTotalsCarryover.totalExpense,
+      )
+
+    return result
+  }
+}

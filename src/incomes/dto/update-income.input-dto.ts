@@ -1,16 +1,15 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-const updateExpenseParamsSchema = z.object({
+const updateIncomeParamsSchema = z.object({
   id: z
     .string()
     .regex(/^\d+$/)
     .transform((val) => parseInt(val, 10)),
 });
 
-const updateExpenseBodySchema = z.object({
+const updateIncomeBodySchema = z.object({
   accountId: z.number().int().positive().optional(),
-  categoryId: z.number().int().positive().optional(),
   date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, {
@@ -24,13 +23,12 @@ const updateExpenseBodySchema = z.object({
       message: 'Value must be a valid decimal number (e.g., 10.50)',
     })
     .optional(),
-  savingsType: z.enum(['deposit', 'withdrawal']).nullable().optional(),
 });
 
-export class UpdateExpenseParamsInputDto extends createZodDto(
-  updateExpenseParamsSchema,
+export class UpdateIncomeParamsInputDto extends createZodDto(
+  updateIncomeParamsSchema,
 ) {}
 
-export class UpdateExpenseBodyInputDto extends createZodDto(
-  updateExpenseBodySchema,
+export class UpdateIncomeBodyInputDto extends createZodDto(
+  updateIncomeBodySchema,
 ) {}
